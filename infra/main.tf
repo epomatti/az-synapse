@@ -15,6 +15,8 @@ provider "azurerm" {
   }
 }
 
+data "azuread_client_config" "current" {}
+
 
 ### Group ###
 
@@ -36,8 +38,6 @@ resource "azurerm_storage_account" "lake" {
   is_hns_enabled           = true
 }
 
-data "azuread_client_config" "current" {}
-
 resource "azurerm_role_assignment" "adlsv2" {
   scope                = azurerm_storage_account.lake.id
   role_definition_name = "Storage Blob Data Contributor"
@@ -51,4 +51,25 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "default" {
   depends_on = [
     azurerm_role_assignment.adlsv2
   ]
+}
+
+// Synapse
+
+resource "azurerm_synapse_workspace" "example" {
+  name                                 = "synw${var.workload}"
+  resource_group_name                  = azurerm_resource_group.default.name
+  location                             = azurerm_resource_group.default.location
+  storage_data_lake_gen2_filesystem_id = azurerm_storage_data_lake_gen2_filesystem.default.id
+  sql_administrator_login              = "sqladmin"
+  sql_administrator_login_password     = var.synapse_password
+
+  aad_admin {
+    login     = "AzureAD Admin"
+    object_id = data.azuread_client_config.current.object_id
+    tenant_id = data.azuread_client_config.current.tenant_id
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
 }
