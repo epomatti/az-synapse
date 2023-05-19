@@ -53,8 +53,9 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "default" {
   ]
 }
 
-// Synapse
+# Synapse
 
+// TODO: Change example
 resource "azurerm_synapse_workspace" "example" {
   name                                 = "synw${var.workload}"
   resource_group_name                  = azurerm_resource_group.default.name
@@ -73,3 +74,19 @@ resource "azurerm_synapse_workspace" "example" {
     type = "SystemAssigned"
   }
 }
+
+# For development only
+# Poduction scenarios: https://techcommunity.microsoft.com/t5/azure-synapse-analytics-blog/disabling-public-network-access-in-synapse/ba-p/3692197
+resource "azurerm_synapse_firewall_rule" "allow_all" {
+  name                 = "AllowAll"
+  synapse_workspace_id = azurerm_synapse_workspace.example.id
+  start_ip_address     = "0.0.0.0"
+  end_ip_address       = "255.255.255.255"
+}
+
+# resource "azurerm_synapse_sql_pool" "test1" {
+#   name                 = "syndp${var.workload}"
+#   synapse_workspace_id = azurerm_synapse_workspace.example.id
+#   sku_name             = "DW100c"
+#   create_mode          = "Default"
+# }
