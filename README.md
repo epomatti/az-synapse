@@ -1,11 +1,19 @@
-# az-synapse
+# Azure Synapse
+
+<img src=".assets/synapse.png" width=450 />
+
+## 1 - Create the infrastructure
+
+Run this code to create the infrastructure resources:
 
 ```sh
 terraform -chdir="infra" init
 terraform -chdir="infra" apply -auto-approve
 ```
 
-Enter manually in Synapse and allow Azure Services to connect to Synapse.
+After completion, enter manually in Synapse and allow Azure Services to connect to Synapse.
+
+## 2 - Load User
 
 Create a dedicated data loading account to use maximum performance.
 
@@ -23,6 +31,8 @@ CREATE USER LoadUser FOR LOGIN LoadUser;
 GRANT CONTROL ON DATABASE::[syndpdatamountain] to LoadUser;
 EXEC sp_addrolemember 'staticrc20', 'LoadUser';
 ```
+
+## 3 - Create the External objects
 
 Connect to the DW database with the new user and create the objects:
 
@@ -62,6 +72,8 @@ CREATE SCHEMA ext;
 
 Now we're ready to create the tables and load the data.
 
+## 4 - Data Load
+
 1. Execute the commands in the [`nyctaxy_schema.sql`](./sql/nyctaxy_schema.sql) file to create the external tables.
 
 2. Execute the commands in the [`nyctaxy_load.sql`](./sql/nyctaxy_load.sql) file to load the data.
@@ -94,4 +106,10 @@ GROUP BY
 ORDER BY
     nbr_files desc, 
     gb_processed desc;
+```
+
+View the system queries:
+
+```sql
+SELECT * FROM sys.dm_pdw_exec_requests;
 ```
