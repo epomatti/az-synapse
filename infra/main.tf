@@ -84,9 +84,9 @@ resource "azurerm_synapse_firewall_rule" "allow_all" {
   end_ip_address       = "255.255.255.255"
 }
 
-# resource "azurerm_synapse_sql_pool" "test1" {
-#   name                 = "syndp${var.workload}"
-#   synapse_workspace_id = azurerm_synapse_workspace.example.id
-#   sku_name             = "DW100c"
-#   create_mode          = "Default"
-# }
+resource "azurerm_synapse_sql_pool" "test1" {
+  name                 = "syndp${var.workload}"
+  synapse_workspace_id = azurerm_synapse_workspace.example.id
+  sku_name             = "DW100c"
+  create_mode          = "Default"
+}
