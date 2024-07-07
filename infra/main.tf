@@ -2,32 +2,25 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "3.56.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {
-    resource_group {
-      prevent_deletion_if_contains_resources = false
+      version = "3.111.0"
     }
   }
 }
 
 data "azuread_client_config" "current" {}
 
+locals {
+  client_object_id = data.azuread_client_config.current.object_id
+  client_tenant_id = data.azuread_client_config.current.tenant_id
+}
 
 ### Group ###
-
 resource "azurerm_resource_group" "default" {
   name     = "rg${var.workload}"
   location = var.location
 }
 
-
 ### Data Lake ###
-
 resource "azurerm_storage_account" "lake" {
   name                     = "dls${var.workload}"
   resource_group_name      = azurerm_resource_group.default.name
@@ -54,9 +47,7 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "default" {
 }
 
 # Synapse
-
-// TODO: Change example
-resource "azurerm_synapse_workspace" "example" {
+resource "azurerm_synapse_workspace" "w001" {
   name                                 = "synw${var.workload}"
   resource_group_name                  = azurerm_resource_group.default.name
   location                             = azurerm_resource_group.default.location
@@ -64,29 +55,30 @@ resource "azurerm_synapse_workspace" "example" {
   sql_administrator_login              = "sqladmin"
   sql_administrator_login_password     = var.synapse_password
 
-  aad_admin {
-    login     = "AzureAD Admin"
-    object_id = data.azuread_client_config.current.object_id
-    tenant_id = data.azuread_client_config.current.tenant_id
-  }
-
   identity {
     type = "SystemAssigned"
   }
+}
+
+resource "azurerm_synapse_workspace_aad_admin" "w001" {
+  synapse_workspace_id = azurerm_synapse_workspace.w001.id
+  login                = "AzureAD Admin"
+  object_id            = local.client_object_id
+  tenant_id            = local.client_tenant_id
 }
 
 # For development only
 # Poduction scenarios: https://techcommunity.microsoft.com/t5/azure-synapse-analytics-blog/disabling-public-network-access-in-synapse/ba-p/3692197
 resource "azurerm_synapse_firewall_rule" "allow_all" {
   name                 = "AllowAll"
-  synapse_workspace_id = azurerm_synapse_workspace.example.id
+  synapse_workspace_id = azurerm_synapse_workspace.w001.id
   start_ip_address     = "0.0.0.0"
   end_ip_address       = "255.255.255.255"
 }
 
 resource "azurerm_synapse_sql_pool" "test1" {
   name                 = "syndp${var.workload}"
-  synapse_workspace_id = azurerm_synapse_workspace.example.id
+  synapse_workspace_id = azurerm_synapse_workspace.w001.id
   sku_name             = "DW100c"
   create_mode          = "Default"
 }

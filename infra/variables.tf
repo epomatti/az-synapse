@@ -5,11 +5,11 @@ variable "workload" {
 
 variable "location" {
   type    = string
-  default = "eastus"
+  default = "eastus2"
 }
 
 variable "synapse_password" {
   type      = string
-  default   = "P4ssw0rd#"
+  default   = "P4ssw0rd#123"
   sensitive = true
 }
